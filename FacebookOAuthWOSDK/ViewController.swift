@@ -10,6 +10,8 @@ import UIKit
 import FacebookCore
 import FacebookLogin
 import SafariServices
+//Comment this import below if you use XCode 9 and iOS 11. This import is valid from XCode 10 and iOS 12.
+import AuthenticationServices
 
 extension URL {
     func getFragmentParam(key: String) -> String? {
@@ -28,6 +30,7 @@ extension URL {
 
 class ViewController: UIViewController {
     
+    //You need to change client_id: 567384830348150 to yours . Note: client_id=567384830348150, redirect_uri=fb567384830348150
     let authString = "https://www.facebook.com/dialog/oauth?client_id=567384830348150&redirect_uri=fb567384830348150%3A%2F%2Fauthorize&scope=public_profile&response_type=token"
     let callbackString = "fb567384830348150://authorize"
     
@@ -35,6 +38,8 @@ class ViewController: UIViewController {
     var safariVC : SFSafariViewController!
     @available(iOS 11.0, *)
     lazy var authSession : SFAuthenticationSession? = { return nil }()
+    @available(iOS 12.0, *)
+    lazy var webAuthSession : ASWebAuthenticationSession? = { return nil }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -76,6 +81,31 @@ class ViewController: UIViewController {
                 print(token ?? "Empty token")
             }
             authSession?.start()
+        } else {
+            // Fallback on earlier versions
+            // Use SFSafariViewController instead
+        }
+        
+    }
+    
+    /*
+     * Login with ASWebAuthenticationSession
+     * Follow the same exact pattern to start a ASWebAuthenticationSession and handle the callback to retrive your OAuth Token
+     */
+    @IBAction func loginWithASWebAuthenticationSession(_ sender: UIButton) {
+        if #available(iOS 12.0, *) {
+            webAuthSession = ASWebAuthenticationSession(url: URL(string: authString)!, callbackURLScheme: callbackString) {
+                (callBack: URL?, error: Error?) in
+                guard error == nil, let successURL = callBack else {
+                    // Log error or display error to the user here
+                    return
+                }
+                
+                let token = successURL.getFragmentParam(key: "access_token")
+                
+                print(token ?? "Empty token")
+            }
+            webAuthSession?.start()
         } else {
             // Fallback on earlier versions
             // Use SFSafariViewController instead
